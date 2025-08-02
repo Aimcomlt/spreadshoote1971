@@ -1,0 +1,12 @@
+.settings-screen {
+  padding: 2rem;
+}
+
+.menu-button {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #333;
+  color: white;
+  text-decoration: none;
+}
