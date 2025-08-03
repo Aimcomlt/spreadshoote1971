@@ -3,13 +3,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { resetGame } from '../store/gameSlice';
 import { usePointerControls } from '../hooks/usePointerControls';
 import loadSprites from '../utils/spriteLoader';
+import loadSounds from '../utils/audioLoader';
 import { createGameState, updateGameState } from '../utils/gameState';
 import './GameScreen.css';
 
 function GameScreen() {
   const dispatch = useDispatch();
   const lives = useSelector((state) => state.game.lives);
+  const soundOn = useSelector((state) => state.settings.soundOn);
   const stateRef = useRef(createGameState());
+  const soundsRef = useRef({});
+  const explosionCountRef = useRef(0);
 
   useEffect(() => {
     dispatch(resetGame());
@@ -19,13 +23,29 @@ function GameScreen() {
     let animationId;
     let lastTime = performance.now();
 
-    loadSprites().then((sprites) => {
+    Promise.all([loadSprites(), loadSounds()]).then(([sprites, sounds]) => {
+      soundsRef.current = sounds;
+      sounds.background.loop = true;
+      if (soundOn) {
+        sounds.background.play();
+      }
+
       const render = (time) => {
         const delta = (time - lastTime) / 1000;
         lastTime = time;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         updateGameState(state, dispatch, delta);
+
+        if (soundOn && soundsRef.current.explosion) {
+          const newExplosions =
+            state.explosions.length - explosionCountRef.current;
+          for (let i = 0; i < newExplosions; i++) {
+            const boom = soundsRef.current.explosion.cloneNode();
+            boom.play();
+          }
+        }
+        explosionCountRef.current = state.explosions.length;
 
         ctx.drawImage(
           sprites.player || sprites.enemies,
@@ -71,8 +91,24 @@ function GameScreen() {
       animationId = requestAnimationFrame(render);
     });
 
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(animationId);
+      if (soundsRef.current.background) {
+        soundsRef.current.background.pause();
+        soundsRef.current.background.currentTime = 0;
+      }
+    };
   }, [dispatch]);
+
+  useEffect(() => {
+    const bg = soundsRef.current.background;
+    if (!bg) return;
+    if (soundOn) {
+      bg.play();
+    } else {
+      bg.pause();
+    }
+  }, [soundOn]);
 
   usePointerControls(({ type, x, y }) => {
     if (type === 'move' || type === 'down') {
@@ -96,6 +132,10 @@ function GameScreen() {
         height: 16,
         vy: 6,
       });
+      if (soundOn && soundsRef.current.shoot) {
+        const pew = soundsRef.current.shoot.cloneNode();
+        pew.play();
+      }
     }
   });
 

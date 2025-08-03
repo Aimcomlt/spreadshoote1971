@@ -21,11 +21,14 @@ const settingsSlice = createSlice({
     toggleSound: (state) => {
       state.soundOn = !state.soundOn;
     },
+    setSoundOn: (state, action) => {
+      state.soundOn = action.payload;
+    },
     setDifficulty: (state, action) => {
       state.difficulty = action.payload;
     },
   },
 });
 
-export const { toggleSound, setDifficulty } = settingsSlice.actions;
+export const { toggleSound, setSoundOn, setDifficulty } = settingsSlice.actions;
 export default settingsSlice.reducer;
