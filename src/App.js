@@ -6,7 +6,7 @@ import './App.css';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={process.env.PUBLIC_URL.replace(window.location.origin, '')}>
       <Routes>
         <Route path="/" element={<MainMenu />} />
         <Route path="/game" element={<GameScreen />} />
