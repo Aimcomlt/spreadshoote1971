@@ -99,7 +99,7 @@ function GameScreen() {
         soundsRef.current.background.currentTime = 0;
       }
     };
-  }, [dispatch]);
+  }, [dispatch, soundOn]);
 
   useEffect(() => {
     const bg = soundsRef.current.background;
