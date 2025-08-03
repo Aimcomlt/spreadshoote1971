@@ -1,25 +1,74 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { resetGame } from '../store/gameSlice';
 import { usePointerControls } from '../hooks/usePointerControls';
 import loadSprites from '../utils/spriteLoader';
+import { createGameState, updateGameState } from '../utils/gameState';
 import './GameScreen.css';
 
 function GameScreen() {
   const dispatch = useDispatch();
   const lives = useSelector((state) => state.game.lives);
+  const stateRef = useRef(createGameState());
 
   useEffect(() => {
     dispatch(resetGame());
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const state = (stateRef.current = createGameState());
+    let animationId;
+
     loadSprites().then((sprites) => {
-      console.log('Sprites loaded', sprites);
-      // start game loop here
+      const render = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateGameState(state);
+
+        ctx.drawImage(
+          sprites.player || sprites.enemies,
+          state.player.x,
+          state.player.y,
+          state.player.width,
+          state.player.height
+        );
+
+        state.enemies.forEach((enemy) => {
+          ctx.drawImage(
+            sprites.enemies,
+            enemy.x,
+            enemy.y,
+            enemy.width,
+            enemy.height
+          );
+        });
+
+        state.bullets.forEach((bullet) => {
+          ctx.drawImage(
+            sprites.bullets,
+            bullet.x,
+            bullet.y,
+            bullet.width,
+            bullet.height
+          );
+        });
+
+        animationId = requestAnimationFrame(render);
+      };
+
+      render();
     });
+
+    return () => cancelAnimationFrame(animationId);
   }, [dispatch]);
 
   usePointerControls(({ x, y, pointerType }) => {
     console.log(`Pointer down at ${x}, ${y} via ${pointerType}`);
-    // Placeholder for shooting or other actions
+    stateRef.current.bullets.push({
+      x: stateRef.current.player.x + stateRef.current.player.width / 2 - 4,
+      y: stateRef.current.player.y,
+      width: 8,
+      height: 16,
+      vy: 6,
+    });
   });
 
   return (
