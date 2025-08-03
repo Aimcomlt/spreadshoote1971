@@ -1,6 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function usePointerControls(callback) {
+  const callbackRef = useRef(callback);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     let activePointerId = null;
     let lastMove = 0;
@@ -12,10 +18,10 @@ export function usePointerControls(callback) {
 
       if (activePointerId === null) {
         activePointerId = pointerId;
-        callback({ type: 'down', x, y, pointerType });
+        callbackRef.current({ type: 'down', x, y, pointerType });
       } else {
         // Secondary touches trigger a fire event
-        callback({ type: 'fire', x, y, pointerType });
+        callbackRef.current({ type: 'fire', x, y, pointerType });
       }
     };
 
@@ -29,7 +35,7 @@ export function usePointerControls(callback) {
       if (now - lastMove < THROTTLE_MS) return;
       lastMove = now;
 
-      callback({ type: 'move', x, y, pointerType });
+      callbackRef.current({ type: 'move', x, y, pointerType });
     };
 
     const handlePointerUp = (event) => {
@@ -38,10 +44,10 @@ export function usePointerControls(callback) {
 
       if (pointerId === activePointerId) {
         activePointerId = null;
-        callback({ type: 'up', x, y, pointerType });
+        callbackRef.current({ type: 'up', x, y, pointerType });
       } else {
         // Treat pointer releases from other touches as fire events
-        callback({ type: 'fire', x, y, pointerType });
+        callbackRef.current({ type: 'fire', x, y, pointerType });
       }
     };
 
@@ -56,5 +62,5 @@ export function usePointerControls(callback) {
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [callback]);
+  }, []);
 }

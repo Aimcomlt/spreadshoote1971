@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { resetGame } from '../store/gameSlice';
 import { usePointerControls } from '../hooks/usePointerControls';
@@ -173,34 +173,39 @@ function GameScreen() {
     }
   }, [soundOn]);
 
-  usePointerControls(({ type, x, y }) => {
-    if (type === 'move' || type === 'down') {
-      const { player, bounds } = stateRef.current;
-      player.x = Math.max(
-        0,
-        Math.min(bounds.width - player.width, x - player.width / 2)
-      );
-      player.y = Math.max(
-        0,
-        Math.min(bounds.height - player.height, y - player.height / 2)
-      );
-    } else if (type === 'up' || type === 'fire') {
-      stateRef.current.bullets.push({
-        x:
-          stateRef.current.player.x +
-          stateRef.current.player.width / 2 -
-          4,
-        y: stateRef.current.player.y,
-        width: 8,
-        height: 16,
-        vy: 6,
-      });
-      if (soundOn && soundsRef.current.shoot) {
-        const pew = soundsRef.current.shoot.cloneNode();
-        pew.play();
+  const handlePointer = useCallback(
+    ({ type, x, y }) => {
+      if (type === 'move' || type === 'down') {
+        const { player, bounds } = stateRef.current;
+        player.x = Math.max(
+          0,
+          Math.min(bounds.width - player.width, x - player.width / 2)
+        );
+        player.y = Math.max(
+          0,
+          Math.min(bounds.height - player.height, y - player.height / 2)
+        );
+      } else if (type === 'up' || type === 'fire') {
+        stateRef.current.bullets.push({
+          x:
+            stateRef.current.player.x +
+            stateRef.current.player.width / 2 -
+            4,
+          y: stateRef.current.player.y,
+          width: 8,
+          height: 16,
+          vy: 6,
+        });
+        if (soundOn && soundsRef.current.shoot) {
+          const pew = soundsRef.current.shoot.cloneNode();
+          pew.play();
+        }
       }
-    }
-  });
+    },
+    [soundOn]
+  );
+
+  usePointerControls(handlePointer);
 
   return (
     <div className="game-screen" style={{ touchAction: 'none' }}>
