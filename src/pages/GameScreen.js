@@ -60,15 +60,29 @@ function GameScreen() {
     return () => cancelAnimationFrame(animationId);
   }, [dispatch]);
 
-  usePointerControls(({ x, y, pointerType }) => {
-    console.log(`Pointer down at ${x}, ${y} via ${pointerType}`);
-    stateRef.current.bullets.push({
-      x: stateRef.current.player.x + stateRef.current.player.width / 2 - 4,
-      y: stateRef.current.player.y,
-      width: 8,
-      height: 16,
-      vy: 6,
-    });
+  usePointerControls(({ type, x, y }) => {
+    if (type === 'move' || type === 'down') {
+      const player = stateRef.current.player;
+      player.x = Math.max(
+        0,
+        Math.min(800 - player.width, x - player.width / 2)
+      );
+      player.y = Math.max(
+        0,
+        Math.min(600 - player.height, y - player.height / 2)
+      );
+    } else if (type === 'up') {
+      stateRef.current.bullets.push({
+        x:
+          stateRef.current.player.x +
+          stateRef.current.player.width / 2 -
+          4,
+        y: stateRef.current.player.y,
+        width: 8,
+        height: 16,
+        vy: 6,
+      });
+    }
   });
 
   return (
