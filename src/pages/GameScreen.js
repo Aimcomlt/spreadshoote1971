@@ -20,6 +20,7 @@ function GameScreen() {
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     const state = (stateRef.current = createGameState());
+    state.bounds = { width: canvas.width, height: canvas.height };
     let animationId;
     let lastTime = performance.now();
 
@@ -112,16 +113,16 @@ function GameScreen() {
 
   usePointerControls(({ type, x, y }) => {
     if (type === 'move' || type === 'down') {
-      const player = stateRef.current.player;
+      const { player, bounds } = stateRef.current;
       player.x = Math.max(
         0,
-        Math.min(800 - player.width, x - player.width / 2)
+        Math.min(bounds.width - player.width, x - player.width / 2)
       );
       player.y = Math.max(
         0,
-        Math.min(600 - player.height, y - player.height / 2)
+        Math.min(bounds.height - player.height, y - player.height / 2)
       );
-    } else if (type === 'up') {
+    } else if (type === 'up' || type === 'fire') {
       stateRef.current.bullets.push({
         x:
           stateRef.current.player.x +
