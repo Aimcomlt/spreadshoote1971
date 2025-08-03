@@ -14,13 +14,44 @@ function GameScreen() {
   const stateRef = useRef(createGameState());
   const soundsRef = useRef({});
   const explosionCountRef = useRef(0);
+  const starsRef = useRef({ bg: [], fg: [] });
+
+  const initStars = (width, height) => {
+    const bg = [];
+    const fg = [];
+    for (let i = 0; i < 100; i++) {
+      bg.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        speed: 20 + Math.random() * 20,
+      });
+    }
+    for (let i = 0; i < 50; i++) {
+      fg.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        speed: 60 + Math.random() * 40,
+      });
+    }
+    starsRef.current = { bg, fg };
+  };
 
   useEffect(() => {
     dispatch(resetGame());
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     const state = (stateRef.current = createGameState());
-    state.bounds = { width: canvas.width, height: canvas.height };
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      state.bounds = { width: canvas.width, height: canvas.height };
+      initStars(canvas.width, canvas.height);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
     let animationId;
     let lastTime = performance.now();
 
@@ -35,7 +66,32 @@ function GameScreen() {
         const delta = (time - lastTime) / 1000;
         lastTime = time;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#001');
+        gradient.addColorStop(1, '#113');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const { bg, fg } = starsRef.current;
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        bg.forEach((star) => {
+          star.y += star.speed * delta;
+          if (star.y > canvas.height) {
+            star.y = 0;
+            star.x = Math.random() * canvas.width;
+          }
+          ctx.fillRect(star.x, star.y, 2, 2);
+        });
+        ctx.fillStyle = '#fff';
+        fg.forEach((star) => {
+          star.y += star.speed * delta;
+          if (star.y > canvas.height) {
+            star.y = 0;
+            star.x = Math.random() * canvas.width;
+          }
+          ctx.fillRect(star.x, star.y, 3, 3);
+        });
+
         updateGameState(state, dispatch, delta);
 
         if (soundOn && soundsRef.current.explosion) {
@@ -77,13 +133,18 @@ function GameScreen() {
         });
 
         state.explosions.forEach((explosion) => {
-          ctx.drawImage(
-            sprites.explosion,
-            explosion.x,
-            explosion.y,
-            explosion.width,
-            explosion.height
-          );
+          const progress = explosion.frame / 15;
+          const radius = (explosion.width / 2) * progress;
+          const x = explosion.x + explosion.width / 2;
+          const y = explosion.y + explosion.height / 2;
+          const grad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+          grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+          grad.addColorStop(0.5, 'rgba(255,165,0,0.7)');
+          grad.addColorStop(1, 'rgba(255,0,0,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
         });
 
         animationId = requestAnimationFrame(render);
@@ -94,6 +155,7 @@ function GameScreen() {
 
     return () => {
       cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', handleResize);
       if (soundsRef.current.background) {
         soundsRef.current.background.pause();
         soundsRef.current.background.currentTime = 0;
@@ -142,7 +204,7 @@ function GameScreen() {
 
   return (
     <div className="game-screen" style={{ touchAction: 'none' }}>
-      <canvas id="game-canvas" width="800" height="600" />
+      <canvas id="game-canvas" />
       <div className="hud">Lives: {lives}</div>
     </div>
   );
