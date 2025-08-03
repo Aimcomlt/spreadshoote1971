@@ -2,6 +2,7 @@
   "name": "spreadshoote1971",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://Aimcomlt.github.io/spreadshoote1971",
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
     "@testing-library/dom": "^10.4.1",
