@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { resetGame } from '../store/gameSlice';
 import { usePointerControls } from '../hooks/usePointerControls';
+import loadSprites from '../utils/spriteLoader';
 import './GameScreen.css';
 
 function GameScreen() {
@@ -10,6 +11,10 @@ function GameScreen() {
 
   useEffect(() => {
     dispatch(resetGame());
+    loadSprites().then((sprites) => {
+      console.log('Sprites loaded', sprites);
+      // start game loop here
+    });
   }, [dispatch]);
 
   usePointerControls(({ x, y, pointerType }) => {
