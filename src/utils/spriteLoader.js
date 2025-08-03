@@ -1,4 +1,5 @@
 const spriteSources = {
+  player: 'enemy_ships.png',
   bullets: 'bullets.png',
   enemies: 'enemy_ships.png',
   explosion: 'explosion_sheet.png',
