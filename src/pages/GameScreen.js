@@ -17,11 +17,15 @@ function GameScreen() {
     const ctx = canvas.getContext('2d');
     const state = (stateRef.current = createGameState());
     let animationId;
+    let lastTime = performance.now();
 
     loadSprites().then((sprites) => {
-      const render = () => {
+      const render = (time) => {
+        const delta = (time - lastTime) / 1000;
+        lastTime = time;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        updateGameState(state, dispatch);
+        updateGameState(state, dispatch, delta);
 
         ctx.drawImage(
           sprites.player || sprites.enemies,
@@ -64,7 +68,7 @@ function GameScreen() {
         animationId = requestAnimationFrame(render);
       };
 
-      render();
+      animationId = requestAnimationFrame(render);
     });
 
     return () => cancelAnimationFrame(animationId);

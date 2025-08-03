@@ -44,8 +44,9 @@ export function createGameState() {
   };
 }
 
-export function updateGameState(state, dispatch) {
+export function updateGameState(state, dispatch, delta = 1 / 60) {
   const difficulty = store.getState().settings.difficulty;
+  const deltaFrames = delta * 60;
 
   // If difficulty changed mid-game, update spawn interval accordingly
   if (difficulty !== state.difficulty) {
@@ -55,22 +56,22 @@ export function updateGameState(state, dispatch) {
   }
 
   // Handle enemy spawning based on a timer
-  state.spawnTimer += 1;
+  state.spawnTimer += deltaFrames;
   if (state.spawnTimer >= state.spawnInterval) {
     state.enemies.push(createEnemy(difficulty));
     state.spawnTimer = 0;
   }
 
   state.enemies.forEach((enemy) => {
-    enemy.x += enemy.vx;
-    enemy.y += enemy.vy;
+    enemy.x += enemy.vx * deltaFrames;
+    enemy.y += enemy.vy * deltaFrames;
     if (enemy.x < 0 || enemy.x + enemy.width > 800) {
       enemy.vx *= -1;
     }
   });
 
   state.bullets.forEach((bullet) => {
-    bullet.y -= bullet.vy;
+    bullet.y -= bullet.vy * deltaFrames;
   });
   state.bullets = state.bullets.filter((bullet) => bullet.y + bullet.height > 0);
 
@@ -109,7 +110,7 @@ export function updateGameState(state, dispatch) {
   }
 
   state.explosions.forEach((explosion) => {
-    explosion.frame += 1;
+    explosion.frame += deltaFrames;
   });
   state.explosions = state.explosions.filter((explosion) => explosion.frame < 15);
 }
