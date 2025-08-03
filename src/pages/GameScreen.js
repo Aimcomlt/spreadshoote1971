@@ -21,7 +21,7 @@ function GameScreen() {
     loadSprites().then((sprites) => {
       const render = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        updateGameState(state);
+        updateGameState(state, dispatch);
 
         ctx.drawImage(
           sprites.player || sprites.enemies,
@@ -48,6 +48,16 @@ function GameScreen() {
             bullet.y,
             bullet.width,
             bullet.height
+          );
+        });
+
+        state.explosions.forEach((explosion) => {
+          ctx.drawImage(
+            sprites.explosion,
+            explosion.x,
+            explosion.y,
+            explosion.width,
+            explosion.height
           );
         });
 
