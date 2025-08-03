@@ -1,18 +1,66 @@
 import { incrementScore } from '../store/gameSlice';
+import { store } from '../store';
+import { DIFFICULTY_CONFIG } from '../store/settingsSlice';
+
+function createEnemy(difficulty) {
+  const config = DIFFICULTY_CONFIG[difficulty];
+  const x = Math.random() * (800 - 48);
+  switch (difficulty) {
+    case 'easy':
+      return { x, y: 0, width: 48, height: 48, vx: 0, vy: config.enemySpeed };
+    case 'hard':
+      return {
+        x,
+        y: 0,
+        width: 48,
+        height: 48,
+        vx: (Math.random() * 2 - 1) * config.enemySpeed,
+        vy: config.enemySpeed + 1,
+      };
+    case 'normal':
+    default:
+      return {
+        x,
+        y: 0,
+        width: 48,
+        height: 48,
+        vx: Math.random() < 0.5 ? -config.enemySpeed : config.enemySpeed,
+        vy: config.enemySpeed,
+      };
+  }
+}
 
 export function createGameState() {
+  const difficulty = store.getState().settings.difficulty;
   return {
     player: { x: 400, y: 550, width: 48, height: 48, vx: 0, vy: 0 },
-    enemies: [
-      { x: 100, y: 50, width: 48, height: 48, vx: 1, vy: 0 },
-      { x: 300, y: 50, width: 48, height: 48, vx: -1, vy: 0 },
-    ],
+    enemies: [],
     bullets: [],
     explosions: [],
+    spawnTimer: 0,
+    spawnInterval: DIFFICULTY_CONFIG[difficulty].spawnInterval,
+    level: 1,
+    difficulty,
   };
 }
 
 export function updateGameState(state, dispatch) {
+  const difficulty = store.getState().settings.difficulty;
+
+  // If difficulty changed mid-game, update spawn interval accordingly
+  if (difficulty !== state.difficulty) {
+    state.difficulty = difficulty;
+    state.spawnInterval = DIFFICULTY_CONFIG[difficulty].spawnInterval;
+    state.spawnTimer = 0;
+  }
+
+  // Handle enemy spawning based on a timer
+  state.spawnTimer += 1;
+  if (state.spawnTimer >= state.spawnInterval) {
+    state.enemies.push(createEnemy(difficulty));
+    state.spawnTimer = 0;
+  }
+
   state.enemies.forEach((enemy) => {
     enemy.x += enemy.vx;
     enemy.y += enemy.vy;
@@ -50,6 +98,14 @@ export function updateGameState(state, dispatch) {
         break;
       }
     }
+  }
+
+  const score = store.getState().game.score;
+  const newLevel = Math.floor(score / 10) + 1;
+  if (newLevel > state.level) {
+    state.level = newLevel;
+    state.spawnInterval = Math.max(10, state.spawnInterval - 5);
+    state.spawnTimer = 0;
   }
 
   state.explosions.forEach((explosion) => {
