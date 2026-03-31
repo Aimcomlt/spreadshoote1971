@@ -21,6 +21,10 @@ const gameSlice = createSlice({
       if (state.lives > 0) state.lives -= 1;
       if (state.lives <= 0) state.isGameOver = true;
     },
+    gainLife: (state, action) => {
+      const amount = action.payload ?? 1;
+      state.lives += amount;
+    },
     resetGame: (state) => {
       state.score = 0;
       state.lives = initialState.lives;
@@ -29,5 +33,5 @@ const gameSlice = createSlice({
   },
 });
 
-export const { incrementScore, playerDamaged, resetGame } = gameSlice.actions;
+export const { incrementScore, playerDamaged, gainLife, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;
