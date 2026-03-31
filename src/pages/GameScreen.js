@@ -10,6 +10,7 @@ import './GameScreen.css';
 function GameScreen() {
   const dispatch = useDispatch();
   const lives = useSelector((state) => state.game.lives);
+  const score = useSelector((state) => state.game.score);
   const soundOn = useSelector((state) => state.settings.soundOn);
   const stateRef = useRef(createGameState());
   const soundsRef = useRef({});
@@ -139,6 +140,28 @@ function GameScreen() {
           );
         });
 
+        if (state.wingman.active) {
+          ctx.fillStyle = '#55d6ff';
+          ctx.fillRect(
+            state.wingman.x,
+            state.wingman.y,
+            state.wingman.width,
+            state.wingman.height
+          );
+        }
+
+        state.powerups.forEach((powerup) => {
+          if (powerup.type === 'bomb') ctx.fillStyle = '#ff7a00';
+          else if (powerup.type === 'life') ctx.fillStyle = '#2fd65d';
+          else ctx.fillStyle = '#ffe347';
+          ctx.fillRect(powerup.x, powerup.y, powerup.width, powerup.height);
+          ctx.fillStyle = '#111';
+          ctx.font = 'bold 12px sans-serif';
+          const glyph =
+            powerup.type === 'bomb' ? 'B' : powerup.type === 'life' ? '+' : 'I';
+          ctx.fillText(glyph, powerup.x + 7, powerup.y + 16);
+        });
+
         state.explosions.forEach((explosion) => {
           const progress = explosion.frame / 15;
           const radius = (explosion.width / 2) * progress;
@@ -209,6 +232,15 @@ function GameScreen() {
           height: 16,
           vy: 6,
         });
+        if (stateRef.current.wingman.active) {
+          stateRef.current.bullets.push({
+            x: stateRef.current.wingman.x + stateRef.current.wingman.width / 2 - 3,
+            y: stateRef.current.wingman.y,
+            width: 6,
+            height: 14,
+            vy: 7,
+          });
+        }
         if (soundOn && soundsRef.current.shoot) {
           const pew = soundsRef.current.shoot.cloneNode();
           pew.play();
@@ -224,6 +256,22 @@ function GameScreen() {
     <div className="game-screen" style={{ touchAction: 'none' }}>
       <canvas id="game-canvas" />
       <div className="hud">Lives: {lives}</div>
+      <div className="hud hud-secondary">Score: {score}</div>
+      <div className="hud hud-level">Level: {stateRef.current.level}</div>
+      <div className="hud hud-wingman">
+        Wingman HP
+        <div className="wingman-bar-shell">
+          <div
+            className="wingman-bar-fill"
+            style={{
+              width: `${(stateRef.current.wingman.hp / stateRef.current.wingman.maxHp) * 100}%`,
+            }}
+          />
+        </div>
+      </div>
+      {performance.now() < stateRef.current.player.invincibleUntil && (
+        <div className="hud hud-invincible">INVINCIBLE</div>
+      )}
       {!isReady && !loadError && <div className="hud">Loading assets…</div>}
       {loadError && <div className="hud">Asset load failed: {loadError}</div>}
     </div>
