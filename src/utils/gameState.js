@@ -2,9 +2,10 @@ import { incrementScore } from '../store/gameSlice';
 import { store } from '../store';
 import { DIFFICULTY_CONFIG } from '../store/settingsSlice';
 
-function createEnemy(difficulty) {
+function createEnemy(difficulty, boundsWidth = 800) {
   const config = DIFFICULTY_CONFIG[difficulty];
-  const x = Math.random() * (800 - 48);
+  const maxX = Math.max(0, boundsWidth - 48);
+  const x = Math.random() * maxX;
   switch (difficulty) {
     case 'easy':
       return { x, y: 0, width: 48, height: 48, vx: 0, vy: config.enemySpeed };
@@ -30,7 +31,7 @@ function createEnemy(difficulty) {
   }
 }
 
-export function createGameState() {
+export function createGameState(bounds = { width: 800, height: 600 }) {
   const difficulty = store.getState().settings.difficulty;
   return {
     player: { x: 400, y: 550, width: 48, height: 48, vx: 0, vy: 0 },
@@ -41,6 +42,7 @@ export function createGameState() {
     spawnInterval: DIFFICULTY_CONFIG[difficulty].spawnInterval,
     level: 1,
     difficulty,
+    bounds,
   };
 }
 
@@ -58,15 +60,18 @@ export function updateGameState(state, dispatch, delta = 1 / 60) {
   // Handle enemy spawning based on a timer
   state.spawnTimer += deltaFrames;
   if (state.spawnTimer >= state.spawnInterval) {
-    state.enemies.push(createEnemy(difficulty));
+    state.enemies.push(createEnemy(difficulty, state.bounds?.width));
     state.spawnTimer = 0;
   }
+
+  const boundsWidth = state.bounds?.width ?? 800;
 
   state.enemies.forEach((enemy) => {
     enemy.x += enemy.vx * deltaFrames;
     enemy.y += enemy.vy * deltaFrames;
-    if (enemy.x < 0 || enemy.x + enemy.width > 800) {
+    if (enemy.x < 0 || enemy.x + enemy.width > boundsWidth) {
       enemy.vx *= -1;
+      enemy.x = Math.max(0, Math.min(boundsWidth - enemy.width, enemy.x));
     }
   });
 

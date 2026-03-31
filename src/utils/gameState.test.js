@@ -36,6 +36,23 @@ test('spawns enemy when spawn timer exceeds interval', () => {
   expect(state.enemies).toHaveLength(1);
 });
 
+test('spawns enemies inside dynamic width bounds', () => {
+  const state = createGameState({ width: 120, height: 600 });
+  state.spawnTimer = state.spawnInterval;
+  updateGameState(state, () => {}, 1 / 60);
+  expect(state.enemies).toHaveLength(1);
+  expect(state.enemies[0].x).toBeGreaterThanOrEqual(0);
+  expect(state.enemies[0].x + state.enemies[0].width).toBeLessThanOrEqual(120);
+});
+
+test('enemies bounce against dynamic width bounds', () => {
+  const state = createGameState({ width: 100, height: 600 });
+  state.enemies = [{ x: 80, y: 0, width: 30, height: 30, vx: 5, vy: 0 }];
+  updateGameState(state, () => {}, 1 / 60);
+  expect(state.enemies[0].vx).toBe(-5);
+  expect(state.enemies[0].x).toBe(70);
+});
+
 test('updates spawn interval and timer when difficulty changes', () => {
   const state = createGameState();
   state.spawnTimer = 10;
