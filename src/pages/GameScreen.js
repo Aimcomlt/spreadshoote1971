@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { resetGame } from '../store/gameSlice';
 import { usePointerControls } from '../hooks/usePointerControls';
@@ -15,6 +15,8 @@ function GameScreen() {
   const soundsRef = useRef({});
   const explosionCountRef = useRef(0);
   const starsRef = useRef({ bg: [], fg: [] });
+  const [loadError, setLoadError] = useState(null);
+  const [isReady, setIsReady] = useState(false);
 
   const initStars = (width, height) => {
     const bg = [];
@@ -37,10 +39,13 @@ function GameScreen() {
   };
 
   useEffect(() => {
+    let isDisposed = false;
     dispatch(resetGame());
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     const state = (stateRef.current = createGameState());
+    setLoadError(null);
+    setIsReady(false);
 
     const handleResize = () => {
       canvas.width = window.innerWidth;
@@ -55,12 +60,14 @@ function GameScreen() {
     let animationId;
     let lastTime = performance.now();
 
-    Promise.all([loadSprites(), loadSounds()]).then(([sprites, sounds]) => {
-      soundsRef.current = sounds;
-      sounds.background.loop = true;
-      if (soundOn) {
-        sounds.background.play();
-      }
+    Promise.all([loadSprites(), loadSounds()])
+      .then(([sprites, sounds]) => {
+        if (isDisposed) return;
+        soundsRef.current = sounds;
+        sounds.background.loop = true;
+        if (soundOn) {
+          sounds.background.play();
+        }
 
       const render = (time) => {
         const delta = (time - lastTime) / 1000;
@@ -150,10 +157,16 @@ function GameScreen() {
         animationId = requestAnimationFrame(render);
       };
 
-      animationId = requestAnimationFrame(render);
-    });
+        animationId = requestAnimationFrame(render);
+        setIsReady(true);
+      })
+      .catch((error) => {
+        if (isDisposed) return;
+        setLoadError(error instanceof Error ? error.message : 'Asset load failed');
+      });
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
       if (soundsRef.current.background) {
@@ -211,6 +224,8 @@ function GameScreen() {
     <div className="game-screen" style={{ touchAction: 'none' }}>
       <canvas id="game-canvas" />
       <div className="hud">Lives: {lives}</div>
+      {!isReady && !loadError && <div className="hud">Loading assets…</div>}
+      {loadError && <div className="hud">Asset load failed: {loadError}</div>}
     </div>
   );
 }
