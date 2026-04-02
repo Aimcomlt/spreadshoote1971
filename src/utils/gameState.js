@@ -224,7 +224,8 @@ export function updateGameState(state, dispatch, delta = 1 / 60) {
   }
 
   const score = store.getState().game.score;
-  const newLevel = Math.floor(score / 10) + 1;
+  const safeScore = Number.isFinite(score) && score > 0 ? score : 0;
+  const newLevel = Math.floor(safeScore / 10) + 1;
   if (newLevel > state.level) {
     state.level = newLevel;
     state.spawnInterval = Math.max(10, state.spawnInterval - 5);

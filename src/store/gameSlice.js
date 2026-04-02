@@ -12,7 +12,10 @@ const gameSlice = createSlice({
   initialState,
   reducers: {
     incrementScore: (state, action) => {
-      state.score += action.payload ?? 1;
+      const rawAmount = action.payload ?? 1;
+      const amount =
+        Number.isFinite(rawAmount) && rawAmount > 0 ? Math.floor(rawAmount) : 0;
+      state.score += amount;
       if (state.score > state.highScore) {
         state.highScore = state.score;
       }
@@ -23,7 +26,9 @@ const gameSlice = createSlice({
     },
     gainLife: (state, action) => {
       const amount = action.payload ?? 1;
-      state.lives += amount;
+      const normalizedAmount =
+        Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : 0;
+      state.lives += normalizedAmount;
     },
     resetGame: (state) => {
       state.score = 0;
